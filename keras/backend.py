@@ -5573,8 +5573,11 @@ def categorical_crossentropy(target, output, from_logits=False, axis=-1):
     # computed correctly.
     output = output / tf.reduce_sum(output, axis, True)
 
-    # Compute cross entropy from probabilities.
-    epsilon_ = _constant_to_tensor(epsilon(), output.dtype.base_dtype)
+    # Compute cross entropy from probabilities. epsilon is changed into
+    # minimum value of the output. see:
+    # https://github.com/keras-team/keras/issues/17634#issuecomment-1458623444
+    epsilon_ = _constant_to_tensor(tf.reduce_min(output),
+                                   output.dtype.base_dtype)
     output = tf.clip_by_value(output, epsilon_, 1.0 - epsilon_)
     return -tf.reduce_sum(target * tf.math.log(output), axis)
 
@@ -5660,7 +5663,11 @@ def categorical_focal_crossentropy(
     # computed correctly.
     output = output / tf.reduce_sum(output, axis=axis, keepdims=True)
 
-    epsilon_ = _constant_to_tensor(epsilon(), output.dtype.base_dtype)
+    # Compute cross entropy from probabilities. epsilon is changed into
+    # minimum value of the output. see:
+    # https://github.com/keras-team/keras/issues/17634#issuecomment-1458623444
+    epsilon_ = _constant_to_tensor(tf.reduce_min(output),
+                                   output.dtype.base_dtype)
     output = tf.clip_by_value(output, epsilon_, 1.0 - epsilon_)
 
     # Calculate cross entropy
@@ -5715,7 +5722,10 @@ def sparse_categorical_crossentropy(
         output, from_logits, "Softmax", "sparse_categorical_crossentropy"
     )
     if not from_logits:
-        epsilon_ = _constant_to_tensor(epsilon(), output.dtype.base_dtype)
+        # epsilon is changed into minimum value of the output. see:
+        # https://github.com/keras-team/keras/issues/17634#issuecomment-1458623444
+        epsilon_ = _constant_to_tensor(tf.reduce_min(output),
+                                       output.dtype.base_dtype)
         output = tf.clip_by_value(output, epsilon_, 1 - epsilon_)
         output = tf.math.log(output)
 
@@ -5810,7 +5820,10 @@ def binary_crossentropy(target, output, from_logits=False):
             labels=target, logits=output
         )
 
-    epsilon_ = _constant_to_tensor(epsilon(), output.dtype.base_dtype)
+    # Epsilon is changed into minimum value of the output. See:
+    # https://github.com/keras-team/keras/issues/17634#issuecomment-1458623444
+    epsilon_ = _constant_to_tensor(tf.reduce_min(output),
+                                   output.dtype.base_dtype)
     output = tf.clip_by_value(output, epsilon_, 1.0 - epsilon_)
 
     # Compute cross entropy from probabilities.
